@@ -1,0 +1,11 @@
+[package]
+name = "aperture-client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+aperture-core = { path = "../aperture-core" }
+aperture-server = { path = "../aperture-server" }
+serde = { workspace = true }
+tokio = { workspace = true }

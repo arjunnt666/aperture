@@ -1,0 +1,16 @@
+[package]
+name = "aperture-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+aperture-core = { path = "../aperture-core" }
+aperture-limiter = { path = "../aperture-limiter" }
+aperture-breaker = { path = "../aperture-breaker" }
+aperture-bulkhead = { path = "../aperture-bulkhead" }
+aperture-adaptive = { path = "../aperture-adaptive" }
+aperture-metrics = { path = "../aperture-metrics" }
+serde = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
