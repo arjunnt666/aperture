@@ -1,0 +1,10 @@
+{
+  "name": "@aperture/js",
+  "version": "0.1.0",
+  "description": "JS client for aperture traffic controls (stub)",
+  "main": "dist/index.js",
+  "scripts": { "build": "tsc", "test": "echo no tests yet" },
+  "keywords": ["rate-limit", "circuit-breaker", "aperture"],
+  "license": "MIT",
+  "devDependencies": { "typescript": "^5.0.0" }
+}
