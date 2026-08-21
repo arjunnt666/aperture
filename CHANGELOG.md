@@ -1,12 +1,13 @@
 # Changelog
 
-## 0.1.1 — unreleased
+## 0.1.2
 
-- document adaptive limiter smoothing defaults
-- note circuit breaker half-open allows a single probe by default
-- clarify bulkhead queue path currently fails fast instead of waiting
+- STATUS.md
+
+## 0.1.1
+
+- tuning notes, roadmap
 
 ## 0.1.0
 
 - initial public skeleton
-- limiter, breaker, bulkhead, adaptive, metrics, control plane
