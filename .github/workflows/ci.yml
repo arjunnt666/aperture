@@ -19,6 +19,7 @@ jobs:
         run: |
           cargo build -p aperture-cli
           ./target/debug/aperture version
+          ./target/debug/aperture demo --requests 12
 
   python:
     runs-on: ubuntu-latest

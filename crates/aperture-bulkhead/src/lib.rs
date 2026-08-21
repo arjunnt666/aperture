@@ -1,6 +1,6 @@
 //! Bulkhead isolation via semaphore style budgets.
 
-use aperture_core::{BulkheadConfig, Outcome, Result};
+use aperture_core::{ApertureError, BulkheadConfig, Decision, Outcome, Result};
 use parking_lot::Mutex;
 use std::sync::Arc;
 
@@ -27,12 +27,9 @@ impl Bulkhead {
                 (self.config.max_concurrent - *active) as u64,
             )));
         }
-        let mut queued = self.queued.lock();
+        drop(active);
+        let queued = self.queued.lock();
         if *queued < self.config.max_queue {
-            *queued += 1;
-            // In a real system this would wait with timeout.
-            // Here we just reject to keep the stub simple.
-            *queued -= 1;
             Ok(Outcome::deny(Some(self.config.queue_timeout_ms)))
         } else {
             Ok(Outcome::shed())
@@ -58,7 +55,10 @@ pub struct BulkheadGuard {
 
 impl BulkheadGuard {
     pub fn new(bulkhead: Arc<Bulkhead>) -> Result<Self> {
-        bulkhead.try_enter()?;
+        let o = bulkhead.try_enter()?;
+        if o.decision != Decision::Allow {
+            return Err(ApertureError::BulkheadFull);
+        }
         Ok(Self { bulkhead })
     }
 }
@@ -66,5 +66,38 @@ impl BulkheadGuard {
 impl Drop for BulkheadGuard {
     fn drop(&mut self) {
         self.bulkhead.exit();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aperture_core::{BulkheadConfig, Decision};
+
+    #[test]
+    fn fills_then_sheds() {
+        let b = Bulkhead::new(BulkheadConfig {
+            max_concurrent: 1,
+            max_queue: 0,
+            queue_timeout_ms: 1,
+        });
+        assert_eq!(b.try_enter().unwrap().decision, Decision::Allow);
+        assert_eq!(b.try_enter().unwrap().decision, Decision::Shed);
+        b.exit();
+        assert_eq!(b.try_enter().unwrap().decision, Decision::Allow);
+    }
+
+    #[test]
+    fn guard_releases_on_drop() {
+        let b = Arc::new(Bulkhead::new(BulkheadConfig {
+            max_concurrent: 1,
+            max_queue: 0,
+            queue_timeout_ms: 1,
+        }));
+        {
+            let _g = BulkheadGuard::new(Arc::clone(&b)).unwrap();
+            assert!(BulkheadGuard::new(Arc::clone(&b)).is_err());
+        }
+        assert!(BulkheadGuard::new(Arc::clone(&b)).is_ok());
     }
 }

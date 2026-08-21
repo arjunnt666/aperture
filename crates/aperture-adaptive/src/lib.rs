@@ -82,3 +82,40 @@ impl AdaptiveLimiter {
 
     pub fn current_limit(&self) -> u32 { *self.limit.lock() as u32 }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aperture_core::Decision;
+    use std::time::Duration;
+
+    #[test]
+    fn high_latency_shrinks_limit() {
+        let lim = AdaptiveLimiter::new(AdaptiveConfig {
+            min_limit: 1,
+            max_limit: 20,
+            initial_limit: 10,
+            target_latency_ms: 10,
+            smoothing: 0.5,
+        });
+        for _ in 0..8 {
+            assert_eq!(lim.try_acquire().unwrap().decision, Decision::Allow);
+            lim.release(Duration::from_millis(200), false);
+        }
+        assert!(lim.current_limit() < 10, "limit should shrink, got {}", lim.current_limit());
+    }
+
+    #[test]
+    fn sheds_when_inflight_at_limit() {
+        let lim = AdaptiveLimiter::new(AdaptiveConfig {
+            min_limit: 1,
+            max_limit: 4,
+            initial_limit: 1,
+            target_latency_ms: 50,
+            smoothing: 0.2,
+        });
+        assert_eq!(lim.try_acquire().unwrap().decision, Decision::Allow);
+        assert_eq!(lim.try_acquire().unwrap().decision, Decision::Shed);
+    }
+}
+

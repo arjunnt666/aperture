@@ -97,3 +97,26 @@ impl CircuitBreaker {
 
     pub fn state(&self) -> State { self.state.lock().state }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aperture_core::{BreakerConfig, Decision};
+
+    #[test]
+    fn opens_after_threshold_failures() {
+        let br = CircuitBreaker::new(BreakerConfig {
+            failure_threshold: 2,
+            success_threshold: 1,
+            timeout_ms: 60_000,
+            half_open_max: 1,
+        });
+        assert_eq!(br.allow().unwrap().decision, Decision::Allow);
+        br.record_failure();
+        assert_eq!(br.state(), State::Closed);
+        br.record_failure();
+        assert_eq!(br.state(), State::Open);
+        assert_eq!(br.allow().unwrap().decision, Decision::Deny);
+    }
+}
+
