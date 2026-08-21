@@ -1,13 +1,11 @@
 # Status
 
-## diagnosis
-Limiter / breaker / bulkhead / adaptive knobs exist as a shape. Not a service mesh and not production traffic control yet.
+## works today
+- token bucket and sliding window tests
+- bulkhead enter/exit
+- workspace compiles
 
-## works as design notes
-- module boundaries and tuning notes
+## still sketched
+- distributed limits, adaptive control from traces
 
-## does not work as production software
-- distributed limit coordination
-- proven adaptive under real latency traces
-
-Embed-first experiments only.
+CI fails if cargo test fails.

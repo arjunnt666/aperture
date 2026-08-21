@@ -23,11 +23,15 @@ impl Bulkhead {
         let mut active = self.active.lock();
         if *active < self.config.max_concurrent {
             *active += 1;
-            return Ok(Outcome::allow(Some((self.config.max_concurrent - *active) as u64)));
+            return Ok(Outcome::allow(Some(
+                (self.config.max_concurrent - *active) as u64,
+            )));
         }
         let mut queued = self.queued.lock();
         if *queued < self.config.max_queue {
             *queued += 1;
+            // In a real system this would wait with timeout.
+            // Here we just reject to keep the stub simple.
             *queued -= 1;
             Ok(Outcome::deny(Some(self.config.queue_timeout_ms)))
         } else {
@@ -37,12 +41,17 @@ impl Bulkhead {
 
     pub fn exit(&self) {
         let mut active = self.active.lock();
-        if *active > 0 { *active -= 1; }
+        if *active > 0 {
+            *active -= 1;
+        }
     }
 
-    pub fn active_count(&self) -> u32 { *self.active.lock() }
+    pub fn active_count(&self) -> u32 {
+        *self.active.lock()
+    }
 }
 
+/// Guard that releases the bulkhead slot on drop.
 pub struct BulkheadGuard {
     bulkhead: Arc<Bulkhead>,
 }
@@ -55,5 +64,7 @@ impl BulkheadGuard {
 }
 
 impl Drop for BulkheadGuard {
-    fn drop(&mut self) { self.bulkhead.exit(); }
+    fn drop(&mut self) {
+        self.bulkhead.exit();
+    }
 }

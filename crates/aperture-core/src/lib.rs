@@ -6,6 +6,6 @@ pub mod decision;
 pub mod config;
 
 pub use error::{ApertureError, Result};
-pub use clock::Clock;
+pub use clock::{Clock, SystemClock};
 pub use decision::{Decision, Outcome};
-pub use config::LimitConfig;
+pub use config::{BreakerConfig, BulkheadConfig, LimitConfig};

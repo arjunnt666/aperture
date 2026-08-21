@@ -11,8 +11,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Run a few local checks against the control plane
     Demo {
-        #[arg(long, default_value = "20")] requests: u32,
+        #[arg(long, default_value = "20")]
+        requests: u32,
     },
     Version,
 }
@@ -34,7 +36,9 @@ async fn main() -> anyhow::Result<()> {
                         client.release();
                         client.success();
                     }
-                    Decision::Deny | Decision::Shed => { denied += 1; }
+                    Decision::Deny | Decision::Shed => {
+                        denied += 1;
+                    }
                 }
                 if i % 5 == 0 {
                     println!("req {} decision={:?}", i, outcome.decision);
