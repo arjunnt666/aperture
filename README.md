@@ -1,24 +1,16 @@
-# aperture
+Aperture is one `check()` that stacks a few admission rules.
 
-traffic shaping you can unit test in a few milliseconds.
+if the circuit breaker is open, the request dies even if the token bucket still has tokens.
+if the burst is spent, the bucket denies.
+if concurrent slots are gone, the bulkhead sheds.
+if inflight hits the adaptive limit, that sheds too.
+order in the stack: breaker, adaptive, bucket, window, bulkhead.
 
-token bucket. sliding window. bulkhead budget. circuit breaker. adaptive concurrency stacked in one `check()`. not a service mesh, not envoy, not a sidecar you forget to restart.
+I wrote this so I could unit test traffic shaping in a few milliseconds. there is no sidecar to forget to restart.
 
-## works today
+`aperture demo --requests 12` uses a tight burst on purpose. it will refuse to print a fake all green run.
 
-- stacked admission: breaker, adaptive, bucket, window, bulkhead
-- token bucket allows then denies when burst is spent
-- open breaker denies even if tokens remain
-- bulkhead sheds when concurrent slots are gone
-- adaptive sheds when inflight hits the limit
-- `aperture demo --requests 12` uses a tight burst and refuses to print a fake all-green run
-
-## does not work yet
-
-- distributed limit coordination across processes
-- adaptive control from real production traces (the math is local)
-
-## try it
+What I have not built: coordinating limits across processes, and feeding adaptive from real production traces. the math is local.
 
 ```bash
 cargo test --workspace
@@ -26,6 +18,4 @@ cargo build -p aperture-cli
 ./target/debug/aperture demo --requests 12
 ```
 
-## license
-
-mit. deny is a feature.
+MIT. deny is a feature.
