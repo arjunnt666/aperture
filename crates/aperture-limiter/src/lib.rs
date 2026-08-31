@@ -41,7 +41,20 @@ impl TokenBucket {
             Ok(Outcome::deny(Some(wait)))
         }
     }
+
+    pub fn remaining(&self) -> f64 {
+        *self.tokens.lock()
+    }
+
+    /// Deterministic refill for tests. Does not sleep.
+    pub fn advance(&self, dt: Duration) {
+        let mut tokens = self.tokens.lock();
+        let refill = dt.as_secs_f64() * self.config.rate;
+        *tokens = (*tokens + refill).min(self.config.burst as f64);
+        *self.last_refill.lock() = std::time::Instant::now();
+    }
 }
+
 
 pub struct SlidingWindow {
     config: LimitConfig,
@@ -95,7 +108,22 @@ mod tests {
     }
 
     #[test]
+    fn advance_refills_without_sleeping() {
+        let bucket = TokenBucket::new(LimitConfig {
+            rate: 10.0,
+            burst: 1,
+            window_ms: 1000,
+        });
+        assert_eq!(bucket.try_acquire(1.0).unwrap().decision, Decision::Allow);
+        assert_eq!(bucket.try_acquire(1.0).unwrap().decision, Decision::Deny);
+        bucket.advance(Duration::from_millis(200));
+        assert!(bucket.remaining() >= 1.0);
+        assert_eq!(bucket.try_acquire(1.0).unwrap().decision, Decision::Allow);
+    }
+
+    #[test]
     fn window_respects_burst() {
+
         let w = SlidingWindow::new(LimitConfig {
             rate: 10.0,
             burst: 1,
